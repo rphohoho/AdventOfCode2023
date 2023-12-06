@@ -6,7 +6,7 @@ import java.io.*;
 public class Day6{
 	public Day6(){
 		try{
-			File file = new File("../input.txt");
+			File file = new File("../test.txt");
 			Scanner sc = new Scanner(file);
 			//part1(sc);
 			part2(sc);
@@ -58,20 +58,19 @@ public class Day6{
 		for(String s : sc.nextLine().split("\\D+"))
 			buffer = buffer.concat(s);
 		long distance = Long.parseLong(buffer);
-		int win = 0;
-		long remainingTime = time/2+1;
-		long holdTime = remainingTime-1;
-		if(time%2 == 0){
-			if((remainingTime-1)*(remainingTime-1) > distance)
-				win++;
-			holdTime--;
+
+		long leftMargin = 0, rightMargin = time/2;
+		while(leftMargin <= rightMargin){
+			long mid = leftMargin+(rightMargin-leftMargin)/2;
+			if(mid*(time-mid) > distance)
+				rightMargin = mid-1;
+			else
+				leftMargin = mid+1;
 		}
-		for(; holdTime >= 0; holdTime--, remainingTime++){
-			if(holdTime*remainingTime <= distance)
-				break;
-			win += 2;
-		}
-		System.out.println(win);
+		long value = (time/2-rightMargin)*2;
+		if(time%2 == 0)
+			value--;
+		System.out.println(value);
 	}
 
 	public static void main(String[] args){

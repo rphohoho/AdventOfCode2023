@@ -1,15 +1,11 @@
 //https://adventofcode.com/2023/day/11
-package year2023.day11;
-
-import year2023.Day;
-
 import java.util.*;
 import java.io.*;
 
-public class Day11 extends Day{
+public class Day11{
 	public Day11(){
-		List<String> inputs = getInput(11).toList();//new ArrayList<>();
-		/*try{
+		List<String> inputs = new ArrayList<>();
+		try{
 			File file = new File("../input.txt");
 			Scanner sc = new Scanner(file);
 			while(sc.hasNextLine())
@@ -18,15 +14,11 @@ public class Day11 extends Day{
 		}
 		catch(FileNotFoundException e){
 			e.printStackTrace();
-		}*/
+		}
 		String[] universe = inputs.toArray(new String[0]);
 		//part(universe, 2);
 		part(universe, 1_000_000);
 	}
-
-	public void part1(){}
-
-	public void part2(){}
 
 	private void part(String[] universe, int scale){
 		List<int[]> galaxies = new ArrayList<>();

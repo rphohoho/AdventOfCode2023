@@ -23,17 +23,17 @@ public class Day10{
 		catch(FileNotFoundException e){
 			e.printStackTrace();
 		}
-		part1(inputs.toArray(new char[0][0]), start);
+		char[][] map = inputs.toArray(new char[0][0]);
+		//part1(map, start);
+		part2(map, start);
 	}
 
 	private void part1(char[][] map, int[] currCoordinate){
-		//System.out.println(currCoordinate[0] + " " + currCoordinate[1]);
 		char previousDirection = findConnectedDirection(map, currCoordinate);
 		char currPipe = updatePipe(map, previousDirection, currCoordinate);
 		currCoordinate = updateCoordinate(previousDirection, currCoordinate);
 		int totalSteps = 1;
 		while(currPipe != 'S'){
-			//System.out.println("Curr: " + currPipe + " preDir: " + previousDirection + " Coord: " + currCoordinate[0] + " " + currCoordinate[1]);
 			previousDirection = findNextDirection(currPipe, previousDirection);
 			currPipe = updatePipe(map, previousDirection, currCoordinate);
 			currCoordinate = updateCoordinate(previousDirection, currCoordinate);
@@ -42,17 +42,56 @@ public class Day10{
 		System.out.println(totalSteps/2);
 	}
 
+	private void part2(char[][] map, int[] currCoordinate){
+		char previousDirection = findConnectedDirection(map, currCoordinate);
+		boolean isConnectedUpward = previousDirection == 'U';
+		char currPipe = updatePipe(map, previousDirection, currCoordinate);
+		currCoordinate = updateCoordinate(previousDirection, currCoordinate);
+		while(currPipe != 'S'){
+			previousDirection = findNextDirection(currPipe, previousDirection);
+			if(currPipe == '|' || currPipe == 'J' || currPipe == 'L')
+				map[currCoordinate[0]][currCoordinate[1]] = 'N';
+			else
+				map[currCoordinate[0]][currCoordinate[1]] = 'P';
+			currPipe = updatePipe(map, previousDirection, currCoordinate);
+			currCoordinate = updateCoordinate(previousDirection, currCoordinate);
+		}
+		map[currCoordinate[0]][currCoordinate[1]] = isConnectedUpward ? 'N' : 'P';
+
+		int col = map[0].length;
+		int enclosedTiles = 0;
+		for(int r = 1; r < map.length-1; r++){
+			boolean inLoop = false;
+			for(int c = 0; c < col; c++){
+				if(map[r][c] == 'N'){
+					inLoop = !inLoop;
+				}
+				else if(inLoop && map[r][c] != 'P'){
+					enclosedTiles++;
+				}
+			}
+		}
+		System.out.println(enclosedTiles);
+	}
+
 	private char findConnectedDirection(char[][] map, int[] currCoordinate){
 		int row = currCoordinate[0], col = currCoordinate[1];
-		char nextPipe = map[row-1][col];
-		if(nextPipe == '7' || nextPipe == 'F')
-			return 'U';
-		nextPipe = map[row+1][col];
-		if(nextPipe == 'J' || nextPipe == 'L')
-			return 'D';
-		nextPipe = map[row][col-1];
-		if(nextPipe == 'L' || nextPipe == 'F')
-			return 'L';
+		char nextPipe;
+		if(row-1 >= 0){
+			nextPipe = map[row-1][col];
+			if(nextPipe == '7' || nextPipe == 'F')
+				return 'U';
+		}
+		if(row+1 < map.length){
+			nextPipe = map[row+1][col];
+			if(nextPipe == 'J' || nextPipe == 'L')
+				return 'D';
+		}
+		if(col-1 >= 0){
+			nextPipe = map[row][col-1];
+			if(nextPipe == 'L' || nextPipe == 'F')
+				return 'L';
+		}
 		return 'R';
 	}
 

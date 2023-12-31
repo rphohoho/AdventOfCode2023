@@ -45,11 +45,8 @@ public class Day15{
 			}
 			else{
 				int lense = input.charAt(input.length()-1)-'0';
-				if(labelsToLenses.containsKey(label)){
-					labelsToLenses.put(label, lense);
-				}
-				else{
-					labelsToLenses.put(label, lense);
+				labelsToLenses.put(label, lense);
+				if(!labelsToLenses.containsKey(label)){
 					if(!boxes.containsKey(boxNum))
 						boxes.put(boxNum, new ArrayList<>());
 					boxes.get(boxNum).add(label);
@@ -61,10 +58,8 @@ public class Day15{
 		for(Map.Entry<Integer, List<String>> entry : boxes.entrySet()){
 			int boxNum = entry.getKey()+1;
 			int slot = 1;
-			for(String label : entry.getValue()){
-				res += boxNum*slot*labelsToLenses.get(label);
-				slot++;
-			}
+			for(String label : entry.getValue())
+				res += boxNum*slot++*labelsToLenses.get(label);
 		}
 		System.out.println(res);
 	}

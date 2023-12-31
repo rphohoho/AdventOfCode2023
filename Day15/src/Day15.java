@@ -2,6 +2,10 @@
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Day15{
@@ -16,13 +20,52 @@ public class Day15{
 		catch(FileNotFoundException e){
 			e.printStackTrace();
 		}
-		part1(inputs);
+		//part1(inputs);
+		part2(inputs);
 	}
 
 	private void part1(String[] inputs){
 		int res = 0;
 		for(String input : inputs)
 			res += hash(input);
+		System.out.println(res);
+	}
+
+	private void part2(String[] inputs){
+		Map<String, Integer> labelsToLenses = new HashMap<>();
+		Map<Integer, List<String>> boxes = new HashMap<>();
+		for(String input : inputs){
+			String label = input.split("[=-]")[0];
+			int boxNum = hash(label);
+			if(input.contains("-")){
+				if(labelsToLenses.containsKey(label)){
+					labelsToLenses.remove(label);
+					boxes.get(boxNum).remove(label);
+				}
+			}
+			else{
+				int lense = input.charAt(input.length()-1)-'0';
+				if(labelsToLenses.containsKey(label)){
+					labelsToLenses.put(label, lense);
+				}
+				else{
+					labelsToLenses.put(label, lense);
+					if(!boxes.containsKey(boxNum))
+						boxes.put(boxNum, new ArrayList<>());
+					boxes.get(boxNum).add(label);
+				}
+			}
+		}
+
+		int res = 0;
+		for(Map.Entry<Integer, List<String>> entry : boxes.entrySet()){
+			int boxNum = entry.getKey()+1;
+			int slot = 1;
+			for(String label : entry.getValue()){
+				res += boxNum*slot*labelsToLenses.get(label);
+				slot++;
+			}
+		}
 		System.out.println(res);
 	}
 

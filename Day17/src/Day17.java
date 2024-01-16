@@ -53,7 +53,8 @@ public class Day17{
 			e.printStackTrace();
 		}
 		int[][] map = input.toArray(int[][]::new);
-		part1(map);
+		//part1(map);
+		part2(map);
 	}
 
 	private void part1(int[][] map){
@@ -85,20 +86,69 @@ public class Day17{
 
 			if(curr.dr != 0){
 				int newC = curr.c-1;
-				if(newC >= 0 && newC < col)
+				if(newC >= 0)
 					queue.add(new State(curr.r, newC, 0, -1, 1, curr.heatLoss+map[curr.r][newC]));
 				newC = curr.c+1;
-				if(newC >= 0 && newC < col)
+				if(newC < col)
 					queue.add(new State(curr.r, newC, 0, 1, 1, curr.heatLoss+map[curr.r][newC]));
 			}
 
 			if(curr.dc != 0){
 				int newR = curr.r-1;
-				if(newR >= 0 && newR < row)
+				if(newR >= 0)
 					queue.add(new State(newR, curr.c, -1, 0, 1, curr.heatLoss+map[newR][curr.c]));
 				newR = curr.r+1;
-				if(newR >= 0 && newR < row)
+				if(newR < row)
 					queue.add(new State(newR, curr.c, 1, 0, 1, curr.heatLoss+map[newR][curr.c]));
+			}
+		}
+	}
+
+	private void part2(int[][] map){
+		Set<State> visited = new HashSet<>();
+		PriorityQueue<State> queue = new PriorityQueue<>((a,b) -> a.heatLoss-b.heatLoss);
+		queue.add(new State(0, 1, 0, 1, 1, map[0][1]));
+		queue.add(new State(1, 0, 1, 0, 1, map[1][0]));
+
+		int row = map.length, col = map[0].length;
+
+		while(!queue.isEmpty()){
+			State curr = queue.poll();
+
+			if(curr.r == row-1 && curr.c == col-1){
+				System.out.println(curr.heatLoss);
+				break;
+			}
+
+			if(visited.contains(curr))
+				continue;
+			visited.add(curr);
+
+			if(curr.steps != 10){
+				int newR = curr.r+curr.dr;
+				int newC = curr.c+curr.dc;
+				if(newR >= 0 && newR < row && newC >= 0 && newC < col)
+					queue.add(new State(newR, newC, curr.dr, curr.dc, curr.steps+1, curr.heatLoss+map[newR][newC]));
+			}
+
+			if(curr.steps > 3){
+				if(curr.dr != 0){
+					int newC = curr.c-1;
+					if(newC > 2)
+						queue.add(new State(curr.r, newC, 0, -1, 1, curr.heatLoss+map[curr.r][newC]));
+					newC = curr.c+1;
+					if(newC < col-3)
+						queue.add(new State(curr.r, newC, 0, 1, 1, curr.heatLoss+map[curr.r][newC]));
+				}
+
+				if(curr.dc != 0){
+					int newR = curr.r-1;
+					if(newR > 2)
+						queue.add(new State(newR, curr.c, -1, 0, 1, curr.heatLoss+map[newR][curr.c]));
+					newR = curr.r+1;
+					if(newR < row-3)
+						queue.add(new State(newR, curr.c, 1, 0, 1, curr.heatLoss+map[newR][curr.c]));
+				}
 			}
 		}
 	}

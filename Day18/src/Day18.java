@@ -10,7 +10,7 @@ public class Day18{
 	public Day18(){
 		LinkedList<String[]> plan =  new LinkedList<>();
 		try{
-			Scanner sc = new Scanner(new File("../test.txt"));
+			Scanner sc = new Scanner(new File("../input.txt"));
 			while(sc.hasNextLine())
 				plan.add(sc.nextLine().split(" "));
 			sc.close();
@@ -22,33 +22,34 @@ public class Day18{
 	}
 
 	private void part1(LinkedList<String[]> plan){
-		LinkedList<int[]> corners = new LinkedList<>();
-		int r = 0, c = 0;
+		int res = 0;
+		int distFromOrigin = 0;
+		int exterior = 0;
+		String lastDirection = "U";
+
 		while(!plan.isEmpty()){
-			corners.add(new int[]{r,c});
 			String direction = plan.peek()[0];
-			int meter = Integer.parseInt(plan.poll()[1]);
+			int width = Integer.parseInt(plan.poll()[1]);
 			switch(direction){
-				case "U" -> c -= meter;
-				case "D" -> c += meter;
-				case "L" -> r -= meter;
-				case "R" -> r += meter;
+				case "L" -> {exterior += width; 
+							 if(lastDirection.equals("D")) exterior++; 
+							 distFromOrigin -= width;}
+				case "R" -> distFromOrigin += width;
+			}
+			lastDirection = direction;
+			
+			direction = plan.peek()[0];
+			int height = Integer.parseInt(plan.poll()[1]);
+			switch(direction){
+				case "D" -> {exterior += height; 
+							 if(lastDirection.equals("L")) exterior--;
+							 res += distFromOrigin*height;} 
+				case "U" ->	res += distFromOrigin*-height;
 			};
+			lastDirection = direction;
 		}
 
-		int res = 0;
-		int[] lastCorner = corners.poll();
-		corners.add(lastCorner);
-		int width = 0;
-		while(!corners.isEmpty()){
-			int[] currCorner = corners.poll();
-			width += (currCorner[0]-lastCorner[0])+(currCorner[1]+lastCorner[1]);
-			lastCorner = currCorner;
-			currCorner = corners.poll();
-			res += width*((currCorner[0]-lastCorner[0])+(currCorner[1]+lastCorner[1]));
-			lastCorner = currCorner;
-		}
-		System.out.println(Math.abs(res));
+		System.out.println(Math.abs(res)+exterior);
 	}
 
 	public static void main(String[] args){

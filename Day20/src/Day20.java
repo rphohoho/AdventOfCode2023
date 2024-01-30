@@ -5,36 +5,54 @@ import java.io.FileNotFoundException;
 import java.util.*;
 
 public class Day20{
-	abstract class Module{
+	class Module{
+		/*
+		  Base class for all modules
+		  Also act as the broadcaster module which sends the same the pulse it receives to all output modules
+		*/
 		String name;
 		int inputPulse;
 		List<String> outputModules;
+		Map<String, Integer> inputModules;
 
 		Module(String[] outputs){
+			name = outputs[0];
 			inputPulse = 0;
 			outputModules = new ArrayList<>();
 			for(int i = 1; i < outputs.length; i++)
 				outputModules.add(outputs[i]);
+			inputModules = new HashMap<>();
 		}
 
-		void setInputPulse(String inputName, int pulse){inputPulse = pulse;}
-
-		int outputPulse(){return 0;}
-
-		List<String> getOutputModules(){return outputModules;}
-
-		boolean isInitialState(){return true;}
-
-	}
-
-	class Broadcaster extends Module{
-		Broadcaster(String[] outputs){
-			super(outputs);
-			name = outputs[0];
+		void setInputPulse(String inputName, int pulse){
+			inputPulse = pulse;
 		}
+
+		int getOutputPulse(){
+			return 0;
+		}
+
+		List<String> getOutputModules(){
+			return outputModules;
+		}
+
+		void addInputModule(String inputName){
+			inputModules.put(inputName, 0);
+		}
+
+		boolean isInitialState(){
+			return true;
+		}
+
+		void resetState(){}
 	}
 
 	class FlipFlop extends Module{
+		/*
+		  Initial state : off
+		  When receiving low pulse, switches on/off and sends a pulse accordingly(on: high, off: low)
+		  Does nothing when receiving high pulse
+		*/
 		boolean on;
 
 		FlipFlop(String[] outputs){
@@ -43,37 +61,49 @@ public class Day20{
 			on = false;
 		}
 
-		int outputPulse(){
+		void setInputPulse(String inputName, int pulse){
+			inputPulse = pulse;
 			if(inputPulse == 0)
 				on = !on;
+		}
+
+		int getOutputPulse(){
 			return on ? 1 : 0;
 		}
 
-		List<String> getOutputModules(){return inputPulse == 0 ? outputModules : new ArrayList<String>(0);}
+		List<String> getOutputModules(){
+			return inputPulse == 0 ? outputModules : new ArrayList<String>();
+		}
 
-		boolean isInitialState(){return on==false;}
+		boolean isInitialState(){
+			return on==false;
+		}
+
+		void resetState(){
+			on = false;
+		}
 	}
 
 	class Conjunction extends Module{
-		Map<String, Integer> inputModules;
-
+		/*
+		  Initial state : all input modules are sending low pulse
+		  Sends low pulse when all input modules are sending high pulse
+		  Sends high pulse at other conditions
+		*/
 		Conjunction(String[] outputs){
 			super(outputs);
 			name = outputs[0].substring(1);
-			inputModules = new HashMap<>();
-			for(int i = 1; i < outputs.length; i++)
-				inputModules.put(outputs[i], 0);
 		}
 
-		void setInputPulse(String inputName, int pulse){inputModules.put(inputName, pulse);}
+		void setInputPulse(String inputName, int pulse){
+			inputModules.put(inputName, pulse);
+		}
 
-		int outputPulse(){return allHighPulses() ? 0 : 1;}
-
-		boolean allHighPulses(){
+		int getOutputPulse(){
 			for(int p : inputModules.values())
 				if(p != 1)
-					return false;
-			return true;
+					return 1;
+			return 0;
 		}
 
 		boolean isInitialState(){
@@ -82,55 +112,119 @@ public class Day20{
 					return false;
 			return true;
 		}
+
+		void resetState(){
+			inputModules.replaceAll((k,v) -> 0);
+		}
+	}
+
+	class Handler{
+		int inputPulse;
+		String from, to;
+
+		Handler(String from, int inputPulse, String to){
+			this.from = from;
+			this.inputPulse = inputPulse;
+			this.to = to;
+		}
+
+		int processPulse(Map<String, Module> modules, LinkedList<Handler> queue){
+			if(modules.containsKey(to)){
+				Module curr = modules.get(to);
+				curr.setInputPulse(from, inputPulse);
+				int outputPulse = curr.getOutputPulse();
+				for(String outputModule : curr.getOutputModules())
+					queue.add(new Handler(to, outputPulse, outputModule));
+			}
+			return inputPulse;
+		}
+
+		boolean checkModule(String name, int pulse){
+			return from.equals(name) && inputPulse==pulse;
+		}
 	}
 
 	public Day20(){
-		List<String[]> inputs = new ArrayList<>();
+		Map<String, Module> modules = new HashMap<>();
+
 		try{
-			Scanner sc = new Scanner(new File("../test1.txt"));
-			while(sc.hasNextLine())
-				inputs.add(sc.nextLine().split("[\\W&&[^%&]]+"));
+			Scanner sc = new Scanner(new File("../input.txt"));
+			while(sc.hasNextLine()){
+				String[] input = sc.nextLine().split("[\\W&&[^%&]]+");
+				char c = input[0].charAt(0);
+				if(c == '%')
+					modules.put(input[0].substring(1), new FlipFlop(input));
+				else if(c == '&')
+					modules.put(input[0].substring(1), new Conjunction(input));
+				else
+					modules.put(input[0], new Module(input));
+			}
 			sc.close();
 		}
 		catch(FileNotFoundException e){
 			e.printStackTrace();
 		}
-		part1(inputs);
-	}
 
-	private void part1(List<String[]> inputs){
-		Map<String, Module> modules = new HashMap<>();
-		for(String[] input : inputs){
-			char c = input[0].charAt(0);
-			if(c == '%')
-				modules.put(input[0].substring(1), new FlipFlop(input));
-			else if(c == '&')
-				modules.put(input[0].substring(1), new Conjunction(input));
-			else
-				modules.put(input[0], new Broadcaster(input));
+		//set connection to input modules, typically for conjunction modules
+		for(Module m : modules.values()){
+			String name = m.name;
+			for(String outputModule : m.getOutputModules())
+				if(modules.containsKey(outputModule))
+					modules.get(outputModule).addInputModule(name);
 		}
 
-		LinkedList<Module> queue = new LinkedList<>();
-		int[] pulses = new int[2];
+		//part1(modules);
+		part2(modules);
+	}
+
+	private void part1(Map<String, Module> modules){
+		LinkedList<Handler> queue = new LinkedList<>();
+		int[] pulseCount = new int[2];
 		int cycleLength = 0;
-		//do{
+		do{
 			cycleLength++;
-			queue.add(modules.get("broadcaster"));
-			Module curr;
+			queue.add(new Handler("button", 0, "broadcaster"));
 			while(!queue.isEmpty()){
-				curr = queue.poll();
-				int output = curr.outputPulse();
-				for(String name : curr.getOutputModules()){
-					if(!modules.containsKey(name))
-						continue;
-					Module outputModule = modules.get(name);
-					outputModule.setInputPulse(curr.name, output);
-					queue.add(outputModule);
-					pulses[output]++;
+				Handler handler = queue.pop();
+				pulseCount[handler.processPulse(modules, queue)]++;
+			}
+		}while(!allInitialState(modules.values()) && cycleLength < 1000);
+
+		//System.out.println(pulseCount[0]+" "+pulseCount[1]+" "+cycleLength);
+		System.out.println(pulseCount[0]*(1000/cycleLength)*pulseCount[1]*(1000/cycleLength));
+	}
+
+	private void part2(Map<String, Module> modules){
+		/*
+		  Result is too large to obtain through simulation
+		  Instead of finding when a low pulse is sent to rx, find when the previous module, zh, will send a low pulse
+		  zh is a conjunction module and it receives inputs from four modules: xc, th, pd, bp
+		  For each of the module, find when will it send a high pulse
+		  Multiply the numbers will result to the time zh receives high pulse from all four modules
+		*/
+		String[] modulesToBeChecked = new String[]{"xc", "th", "pd", "bp"};
+		LinkedList<Handler> queue = new LinkedList<>();
+		long res = 1;
+		for(String m : modulesToBeChecked){
+			int buttonPressed = 0;
+			boolean nextModule = false;
+			while(!nextModule){
+				buttonPressed++;
+				queue.add(new Handler("button", 0, "broadcaster"));
+				while(!queue.isEmpty()){
+					Handler handler = queue.pop();
+					if(handler.checkModule(m, 1)){
+						//System.out.println(buttonPressed);
+						res *= buttonPressed;
+						nextModule = true;
+						break;
+					}
+					handler.processPulse(modules, queue);
 				}
 			}
-		//}while(!allInitialState(modules.values()));
-		System.out.println(pulses[0]+" "+pulses[1]+" "+cycleLength);
+			modules.forEach((k,v) -> v.resetState());
+		}
+		System.out.println(res);
 	}
 
 	private boolean allInitialState(Collection<Module> modules){
